@@ -1,4 +1,4 @@
-# ✍️ Handwritten Math to LaTeX Converter
+# ✍️ Math Drawing 
 
 Chuyển công thức toán học viết tay thành dạng **LaTeX**, giúp hiển thị, sao chép hoặc giải bài toán bằng AI.
 
