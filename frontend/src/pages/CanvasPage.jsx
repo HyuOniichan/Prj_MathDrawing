@@ -3,6 +3,12 @@ import rough from 'roughjs/bundled/rough.esm.js'
 
 const generator = rough.generator();
 
+// hardcode 
+const LINE_THICKNESS = 5;
+const STROKE_COLOR = 'black';
+const FILL_COLOR = 'none';
+const STROKE_WIDTH = 2;
+
 const isInElement = (element, x, y) => {
     const { x1, y1, x2, y2, type } = element;
 
@@ -27,7 +33,10 @@ const isInElement = (element, x, y) => {
             return (
                 Math.abs((y2 - y1) * (x - x1) + (x1 - x2) * (y - y1)) /
                 Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
-            ) < 5; // placeholder for line thickness / 2
+            ) < LINE_THICKNESS / 2;
+        case 'pen':
+            // Create a bounding box around the path
+            return true;
         default:
             return false;
     }
@@ -50,10 +59,30 @@ const CanvasPage = ({
 
         const roughCanvas = rough.canvas(canvas);
 
-        elements.forEach(({ element }) => roughCanvas.draw(element));
-    }, [elements]);
+        elements.forEach(({ element }) => element && roughCanvas.draw(element));
 
-    const createElement = (id, type, x1, y1, x2, y2) => {
+        // Draw bounding box
+        if (selectedElement) {
+            const { x1, y1, x2, y2 } = selectedElement;
+            const boundingBox = generator.rectangle(
+                Math.min(x1, x2) - STROKE_WIDTH,
+                Math.min(y1, y2) - STROKE_WIDTH,
+                Math.abs(x2 - x1) + STROKE_WIDTH * 2,
+                Math.abs(y2 - y1) + STROKE_WIDTH * 2,
+                {
+                    stroke: STROKE_COLOR,
+                    strokeWidth: STROKE_WIDTH,
+                    fillStyle: 'dashed',
+                    strokeLineDash: [5, 5],
+                    strokeLineDashOffset: 10,
+                }
+            )
+            roughCanvas.draw(boundingBox);
+        }
+
+    }, [elements, selectedElement]);
+
+    const createElement = (id, type, x1 = 0, y1 = 0, x2 = 0, y2 = 0) => {
         switch (type) {
             case 'rectangle':
                 return {
@@ -65,6 +94,12 @@ const CanvasPage = ({
                     id, type, x1, y1, x2, y2,
                     element: generator.line(x1, y1, x2, y2)
                 };
+            case 'pen':
+                return {
+                    id, type, x1, y1, x2, y2,
+                    element: generator.linearPath([[x2, y2]]),
+                    points: [[x2, y2]]
+                };
             default:
                 return {
                     id, type, x1, y1, x2, y2,
@@ -74,10 +109,39 @@ const CanvasPage = ({
     }
 
     const getElementAt = (x, y) => {
-        return elements.find(({ x1, y1, x2, y2, type }) => isInElement({ x1, y1, x2, y2, type }, x, y));
+        return elements.find(
+            ({ x1, y1, x2, y2, type, points }) => isInElement({ x1, y1, x2, y2, type, points }, x, y)
+        );
     }
 
-    const updateElement = (id, type, x1, y1, x2, y2) => {
+    // start from [x1, y1] - end at [x2, y2] 
+    const updateElement = (id, type, x1 = 0, y1 = 0, x2 = 0, y2 = 0) => {
+        if (type === 'pen') {
+            const element = elements[id];
+
+            setElements(prev => {
+                const newElements = [...prev];
+                newElements[id] = {
+                    ...element,
+                    points: [...element.points, [x2, y2]],
+                    // Ensure x1 and y1 is the top-left corner, and x2 and y2 is the bottom-right corner
+                    x1: Math.min(element.x1, x2),
+                    y1: Math.min(element.y1, y2),
+                    x2: Math.max(element.x2, x2),
+                    y2: Math.max(element.y2, y2),
+
+                    element: generator.linearPath([...element.points, [x2, y2]], {
+                        stroke: STROKE_COLOR,
+                        fill: FILL_COLOR,
+                        strokeWidth: STROKE_WIDTH
+                    })
+                };
+                return newElements;
+            })
+
+            return;
+        }
+
         const element = createElement(id, type, x1, y1, x2, y2);
 
         setElements(prev => {
@@ -93,12 +157,12 @@ const CanvasPage = ({
         if (selectedTool === 'select') {
             const element = getElementAt(clientX, clientY);
             if (!element) return;
-            
+
             const offsetX = clientX - element.x1;
             const offsetY = clientY - element.y1;
 
-            setSelectedElement({...element, offsetX, offsetY});
-            setAction('moving'); 
+            setSelectedElement({ ...element, offsetX, offsetY });
+            setAction('moving');
         } else {
             const id = elements.length;
             const element = createElement(id, selectedTool, clientX, clientY, clientX, clientY);
@@ -125,7 +189,54 @@ const CanvasPage = ({
             const { id, type, x1, y1, x2, y2, offsetX, offsetY } = selectedElement;
             const dx = clientX - offsetX;
             const dy = clientY - offsetY;
+
+            if (type === 'pen') {
+                const element = elements[id];
+                const deltaX = dx - element.x1;
+                const deltaY = dy - element.y1;
+                const newPoints = element.points.map(([px, py]) => [px + deltaX, py + deltaY]);
+
+                setElements(prev => {
+                    const newElements = [...prev];
+                    newElements[id] = {
+                        ...element,
+                        x1: dx,
+                        y1: dy,
+                        x2: dx + (element.x2 - element.x1),
+                        y2: dy + (element.y2 - element.y1),
+                        points: newPoints,
+                        element: generator.linearPath(newPoints, {
+                            stroke: STROKE_COLOR,
+                            fill: FILL_COLOR,
+                            strokeWidth: STROKE_WIDTH
+                        })
+                    };
+                    return newElements;
+                });
+
+                setSelectedElement({
+                    ...selectedElement,
+                    x1: dx,
+                    y1: dy,
+                    x2: dx + (x2 - x1),
+                    y2: dy + (y2 - y1),
+                    offsetX,
+                    offsetY
+                });
+
+                return; 
+            }
+
             updateElement(id, type, dx, dy, dx + x2 - x1, dy + y2 - y1);
+
+            // update bounding box follow the object
+            setSelectedElement({
+                ...selectedElement,
+                x1: dx,
+                y1: dy,
+                x2: dx + (x2 - x1),
+                y2: dy + (y2 - y1)
+            });
         }
     }
 
