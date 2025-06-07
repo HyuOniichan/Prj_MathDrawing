@@ -163,6 +163,8 @@ const CanvasPage = ({
 
             setSelectedElement({ ...element, offsetX, offsetY });
             setAction('moving');
+        } else if (selectedTool === 'eraser') {
+            setAction('erasing');
         } else {
             const id = elements.length;
             const element = createElement(id, selectedTool, clientX, clientY, clientX, clientY);
@@ -237,6 +239,12 @@ const CanvasPage = ({
                 x2: dx + (x2 - x1),
                 y2: dy + (y2 - y1)
             });
+        } else if (action === 'erasing') {
+            // bug: it does not work while holding and moving the mouse 
+            const element = getElementAt(clientX, clientY);
+            if (!element) return;
+
+            setElements(prev => prev.filter(el => el.id !== element.id));
         }
     }
 

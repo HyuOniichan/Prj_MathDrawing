@@ -11,7 +11,7 @@ import {
     Pencil,
     Type,
     Image,
-    Pentagon,
+    Eraser,
     Combine
 } from 'lucide-react';
 
@@ -29,7 +29,7 @@ const tools = [
     { id: 'pen', icon: <Pencil size={iconSize} />, label: 'Pen' },
     { id: 'text', icon: <Type size={iconSize} />, label: 'Text' },
     { id: 'image', icon: <Image size={iconSize} />, label: 'Image' },
-    { id: 'shape', icon: <Pentagon size={iconSize} />, label: 'Shape' },
+    { id: 'eraser', icon: <Eraser size={iconSize} />, label: 'Eraser' },
     { id: 'group', icon: <Combine size={iconSize} />, label: 'Group' },
 ];
 
