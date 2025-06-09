@@ -1,11 +1,20 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import WhiteBoard from './WhiteBoard.jsx'
-import Options from './Options.jsx'
+import { ToolProvider } from './contexts/ToolContext'
+import { DrawCanvasProvider } from './contexts/DrawCanvasContext'
+import { DrawCanvas } from './components/DrawCanvas'
+import { ToolCanvas } from './components/ToolCanvas'
+import { useDrawCanvas } from './contexts/DrawCanvasContext'
+import { ToolSelector } from './components/ToolSelector'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <Options/>
-        <WhiteBoard/>
+        <ToolProvider>
+            <DrawCanvasProvider>
+                <ToolSelector zIndex={1000}></ToolSelector>
+                <DrawCanvas layerId={1}></DrawCanvas>
+                <ToolCanvas zIndex={999}></ToolCanvas>
+            </DrawCanvasProvider>
+        </ToolProvider>
     </React.StrictMode>
 )

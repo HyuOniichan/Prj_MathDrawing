@@ -101,6 +101,16 @@ export class Vector {
         return this
     }
 
+    /**
+     * mormalize the vector base on origin point
+     * @param {Vector} origin - origin point
+     */
+    normalize(origin = new Vector()) {
+        const subVec = this.clone().subtract(origin)
+        const rate = Math.max(Math.abs(subVec.x), Math.abs(subVec.y))
+        return subVec.divide(rate)
+    }
+
     /**@type {Vector | null} */
     #saveData = null
 
