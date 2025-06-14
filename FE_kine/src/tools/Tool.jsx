@@ -1,6 +1,7 @@
 import React from "react";
 import { CanvasAPI } from "../utils/CanvasAPI";
 import { useDrawStyle } from "../Instances/drawStyle";
+import { HistoryContextValue } from "../contexts/HistoryContext";
 
 export class Tool {
     /**
@@ -17,11 +18,13 @@ export class Tool {
      * set up the tool canvas
      * @param {CanvasAPI} canvasAPI 
      * @param {CanvasAPI} targetCanvasAPI
+     * @param {HistoryContextValue} history 
      */
-    setUp(canvasAPI, targetCanvasAPI) {
+    setUp(canvasAPI, targetCanvasAPI, history) {
         //declare variables
         this.canvasAPI = canvasAPI
         this.targetCanvasAPI = targetCanvasAPI
+        this.history = history
 
         //init 
         canvasAPI.canvasRef.current.style.cursor = this.cursorValue || 'default'

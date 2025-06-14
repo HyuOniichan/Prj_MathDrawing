@@ -5,9 +5,10 @@ import { useDrawCanvas } from "../contexts/DrawCanvasContext";
 import { availableTools } from "../tools/availableTools";
 import { Tool } from "../tools/Tool";
 import { CanvasAPI } from "../utils/CanvasAPI";
+import { useHistory } from "../contexts/HistoryContext";
 
-const CANVAS_WIDTH = window.innerWidth
-const CANVAS_HEIGHT = window.innerHeight
+const CANVAS_WIDTH = screen.width
+const CANVAS_HEIGHT = screen.height
 
 /**
  * tool canvas
@@ -55,17 +56,14 @@ export function ToolCanvas({zIndex = 999}) {
 
     //layer handler
     useEffect(() => {
-        console.log('focus layer =', focusedLayer)
         const api = getCanvasAPI(focusedLayer)
-        setTargetCanvasAPI(api)
-    }, [focusedLayer])
+        if(api) {
+            setTargetCanvasAPI(api)
+        }
+    })
 
-    // useEffect(() => {
-    //     if (targetCanvasAPI) {
-    //         console.log('Updated targetCanvasAPI:', targetCanvasAPI)
-    //     }
-    // }, [targetCanvasAPI])
-
+    //history use
+    const history = useHistory()
 
     //tool handler
     useEffect(() => {
@@ -76,7 +74,7 @@ export function ToolCanvas({zIndex = 999}) {
         canvasRef.current.width = CANVAS_WIDTH
         canvasRef.current.height = CANVAS_HEIGHT
 
-        activeTool?.setUp?.(canvasAPI, targetCanvasAPI)
+        activeTool?.setUp?.(canvasAPI, targetCanvasAPI, history)
 
         /**
          * canvas on mouse down
@@ -122,8 +120,8 @@ export function ToolCanvas({zIndex = 999}) {
         <canvas ref={canvasRef}
             style={{
                 position: "absolute",
-                width: '100%',
-                height: '100%',
+                width: CANVAS_WIDTH + 'px',
+                height: CANVAS_HEIGHT + 'px',
                 top: 0,
                 left: 0,
                 zIndex: zIndex

@@ -1,12 +1,20 @@
-import React from "react";
+import React, { createRef } from "react";
 import { CanvasAPI } from "../utils/CanvasAPI";
 import { useDrawStyle } from "../Instances/drawStyle";
 import { Tool } from "./Tool";
 import { Stroke } from "../utils/Stroke";
 import { Vector } from "../utils/Vector";
 
-const CANVAS_WIDTH = window.innerWidth
-const CANVAS_HEIGHT = window.innerHeight
+const CANVAS_WIDTH = screen.width
+const CANVAS_HEIGHT = screen.height
+
+/**
+ * stroke(s) that is currently focus
+ * @type {React.RefObject<Stroke[] | null>}
+ */
+export const currentFocusedStrokes = createRef()
+
+currentFocusedStrokes.current = null
 
 export class SelectTool extends Tool {
     /**
@@ -23,26 +31,6 @@ export class SelectTool extends Tool {
      * cursor radius for stroke pointer
      */
     cursorRadius = 10
-
-    /**
-     * set up the tool canvas
-     * @param {CanvasAPI} canvasAPI 
-     * @param {CanvasAPI} targetCanvasAPI
-     */
-    setUp(canvasAPI, targetCanvasAPI) {
-        //declare variables
-        this.canvasAPI = canvasAPI
-        this.targetCanvasAPI = targetCanvasAPI
-
-        //init 
-        canvasAPI.canvasRef.current.style.cursor = this.cursorValue || 'default'
-        const ctx = canvasAPI.canvasRef.current.getContext('2d')
-        const drawStyle = useDrawStyle()
-        Object.assign(ctx, drawStyle)
-
-        //add linewidth for accurate
-        this.cursorRadius += ctx.lineWidth / 2
-    }
 
     /**
      * is mouse down?
@@ -79,6 +67,28 @@ export class SelectTool extends Tool {
     startSelectPoint = null
 
     /**
+     * set up the tool canvas
+     * @param {CanvasAPI} canvasAPI 
+     * @param {CanvasAPI} targetCanvasAPI
+     * @param {HistoryContextValue} history 
+     */
+    setUp(canvasAPI, targetCanvasAPI, history) {
+        //declare variables
+        this.canvasAPI = canvasAPI
+        this.targetCanvasAPI = targetCanvasAPI
+        this.history = history
+
+        //init 
+        canvasAPI.canvasRef.current.style.cursor = this.cursorValue || 'default'
+        const ctx = canvasAPI.canvasRef.current.getContext('2d')
+        const drawStyle = useDrawStyle()
+        Object.assign(ctx, drawStyle)
+
+        //add linewidth for accurate
+        this.cursorRadius += ctx.lineWidth / 2
+    }
+
+    /**
      * get distance between 2 vectors
      * @param {Vector} v1 
      * @param {Vector} v2 
@@ -100,7 +110,7 @@ export class SelectTool extends Tool {
         if(this.pointStroke !== null) {
             this.canvasAPI.canvasRef.current.style.cursor = 'grabbing'
             //if point to another stroke
-            if(this.focusedStrokes !== null && this.focusedStrokes.every(stroke => stroke !== this.pointStroke)) {
+            if(this.focusedStrokes === null || this.focusedStrokes.every(stroke => stroke !== this.pointStroke)) {
                 this.focusedStrokes = [this.pointStroke]
             }
             //show chosen one
@@ -226,6 +236,10 @@ export class SelectTool extends Tool {
      */
     onMouseUp({rawEvent, ctx} = {}) {
         this.isMouseDown = false
+        //handle history
+        if(this.focusedStrokes && this.focusedStrokes.length > 0) {
+            this.history.commit()
+        }
         //handle select area
         if(this.areaSelect) {
             const mouse = new Vector(rawEvent.offsetX, rawEvent.offsetY)
@@ -250,6 +264,8 @@ export class SelectTool extends Tool {
 
         //re render canvas
         this.targetCanvasAPI.drawCanvas()
+        //update outer focus strokes
+        currentFocusedStrokes.current = this.focusedStrokes
         //try finding new target
         this.onMouseMove({rawEvent: rawEvent, ctx: ctx})
     }
@@ -266,5 +282,6 @@ export class SelectTool extends Tool {
     cleanUp() {
         const ctx = this.canvasAPI.canvasRef.current.getContext('2d')
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+        currentFocusedStrokes.current = null
     }
 }

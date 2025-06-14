@@ -1,20 +1,18 @@
 import React, { useEffect, useRef } from "react";
 import { useDrawCanvas } from "../contexts/DrawCanvasContext";
 import { useStrokeRef } from "../utils/strokesRef";
-import { useTool } from "../contexts/ToolContext";
-import { availableTools } from "../tools/availableTools";
-import { drawStyleRef, useDrawStyle } from "../Instances/drawStyle";
+import { useDrawStyle } from "../Instances/drawStyle";
 import { CanvasAPI } from "../utils/CanvasAPI";
 
-const CANVAS_WIDTH = window.innerWidth
-const CANVAS_HEIGHT = window.innerHeight
+const CANVAS_WIDTH = screen.width
+const CANVAS_HEIGHT = screen.height
 
 /**
  * draw canvas
- * @param {{layerId: Number, display: String}}
+ * @param {{layerId: Number, display: String, backgroundColor: String}}
  * @returns {JSX.Element}
  */
-export function DrawCanvas({layerId = 1, display = 'block'}) {
+export function DrawCanvas({layerId = 1, display = 'block', backgroundColor = 'white'}) {
     /**
      * all strokes on draw canvas
      */
@@ -33,6 +31,10 @@ export function DrawCanvas({layerId = 1, display = 'block'}) {
     const ctxRef = useRef(null)
 
     function draw(){
+        //update api
+        updateAPI()
+
+        //draw strokes
         const canvas = canvasRef.current
         const ctx = canvas.getContext('2d')
         ctxRef.current = ctx
@@ -42,6 +44,10 @@ export function DrawCanvas({layerId = 1, display = 'block'}) {
 
         //clear canvas
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+        //fill with background color
+        ctx.fillStyle = backgroundColor
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
         //get draw style
         const drawStyle = useDrawStyle()
@@ -89,28 +95,35 @@ export function DrawCanvas({layerId = 1, display = 'block'}) {
         })
         ctx.restore() //restore ctx
     }
+
+    const { registerCanvas, getCanvasAPI } = useDrawCanvas()
+
     /**
      * Awake function
      */
     useEffect(draw)
 
-    //canvas API
-    const api = new CanvasAPI(canvasRef, strokesRef, draw)
-
-    //register this as a new canvas
-    const { registerCanvas } = useDrawCanvas()
-
+    //register on new canvas
     useEffect(() => {
+        //canvas API
+        const api = new CanvasAPI(canvasRef, strokesRef, draw)
         registerCanvas(layerId, api)
     }, [layerId])
+
+    function updateAPI() {
+        const api = getCanvasAPI(layerId)
+        if(api) {
+            strokesRef.current = api.strokesRef.current
+        }
+    }
 
     return (
         <canvas ref={canvasRef}
             style={{
                 backgroundColor: 'green',
                 position: 'absolute',
-                width: '100%',
-                height: '100%',
+                width: CANVAS_WIDTH + 'px',
+                height: CANVAS_HEIGHT + 'px',
                 left: '0',
                 top: '0',
                 zIndex: layerId,

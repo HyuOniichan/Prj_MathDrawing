@@ -7,8 +7,8 @@ import { useDrawCanvas } from "../contexts/DrawCanvasContext";
 import { useDrawStyle } from "../Instances/drawStyle";
 import { CanvasAPI } from "../utils/CanvasAPI";
 
-const CANVAS_WIDTH = window.innerWidth
-const CANVAS_HEIGHT = window.innerHeight
+const CANVAS_WIDTH = screen.width
+const CANVAS_HEIGHT = screen.height
 
 export class PenTool extends Tool {
     /**
@@ -19,17 +19,19 @@ export class PenTool extends Tool {
     /**
      * cursor value
      */
-    cursorValue = `url('../image/cursor/pen.png') 0 32, auto`
+    cursorValue = `url('../src/image/cursor/pen.png') 0 32, auto`
 
     /**
      * set up the tool canvas
      * @param {CanvasAPI} canvasAPI 
      * @param {CanvasAPI} targetCanvasAPI
+     * @param {HistoryContextValue} history 
      */
-    setUp(canvasAPI, targetCanvasAPI) {
+    setUp(canvasAPI, targetCanvasAPI, history) {
         //declare variables
         this.canvasAPI = canvasAPI
         this.targetCanvasAPI = targetCanvasAPI
+        this.history = history
 
         //init 
         canvasAPI.canvasRef.current.style.cursor = this.cursorValue || 'default'
@@ -126,5 +128,12 @@ export class PenTool extends Tool {
         this.targetCanvasAPI.strokesRef.current.push(stroke)
         //re render
         this.targetCanvasAPI.drawCanvas()
+        //commit history
+        this.history.commit()
     }
+
+    /**
+     * clear all event listeners or reference that can cause bugs
+     */
+    cleanUp() {}
 }

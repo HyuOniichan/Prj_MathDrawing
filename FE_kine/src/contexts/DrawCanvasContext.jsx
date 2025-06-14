@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef } from 'react';
+import React, { ReactNode, createContext, useContext, useState, useRef } from 'react';
 import { CanvasAPI } from '../utils/CanvasAPI';
 
 export class DrawCanvasContextValue {
@@ -29,6 +29,11 @@ export class DrawCanvasContextValue {
 /**@type {React.Context<DrawCanvasContextValue | null>} */
 const DrawCanvasContext = createContext(null)
 
+/**
+ * Draw Canvas Provider, default layer is 1
+ * @param {{children: ReactNode}}
+ * @returns {JSX.Element}
+ */
 export function DrawCanvasProvider({ children }) {
     const [focusedLayer, setFocusedLayer] = useState(1) //default layer : 1
     const canvasRefs = useRef(new Map())

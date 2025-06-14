@@ -32,7 +32,7 @@ export function ToolSelector({zIndex = 999}) {
 export function ToolButton({name}) {
     const {activeToolName, setActiveTool} = useTool()
 
-    const imageSrc = `../image/tool/${name}.png`
+    const imageSrc = `../src/image/tool/${name}.png`
 
     function switchTool() {
         setActiveTool(name)

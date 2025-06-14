@@ -5,8 +5,8 @@ import { useDrawStyle } from "../Instances/drawStyle";
 import { Vector } from "../utils/Vector";
 import { Stroke } from "../utils/Stroke";
 
-const CANVAS_WIDTH = window.innerWidth
-const CANVAS_HEIGHT = window.innerHeight
+const CANVAS_WIDTH = screen.width
+const CANVAS_HEIGHT = screen.height
 
 export class EraserTool extends Tool {
     /**
@@ -17,7 +17,7 @@ export class EraserTool extends Tool {
     /**
      * cursor value
      */
-    cursorValue = `url('../image/cursor/eraser.png') 6 26, auto`
+    cursorValue = `url('../src/image/cursor/eraser.png') 6 26, auto`
 
     /**
      * radius
@@ -30,20 +30,30 @@ export class EraserTool extends Tool {
     isMouseDown = false
 
     /**
+     * count deleted strokes
+     */
+    deletedStrokes = 0
+
+    /**
      * set up the tool canvas
      * @param {CanvasAPI} canvasAPI 
      * @param {CanvasAPI} targetCanvasAPI
+     * @param {HistoryContextValue} history 
      */
-    setUp(canvasAPI, targetCanvasAPI) {
+    setUp(canvasAPI, targetCanvasAPI, history) {
         //declare variables
         this.canvasAPI = canvasAPI
         this.targetCanvasAPI = targetCanvasAPI
+        this.history = history
 
         //init 
         canvasAPI.canvasRef.current.style.cursor = this.cursorValue || 'default'
         const ctx = canvasAPI.canvasRef.current.getContext('2d')
         const drawStyle = useDrawStyle()
         Object.assign(ctx, drawStyle)
+
+        //add linewidth for accurate
+        this.eraserRadius += ctx.lineWidth / 2
     }
 
     /**
@@ -61,6 +71,7 @@ export class EraserTool extends Tool {
      * @param {{rawEvent: MouseEvent, ctx:CanvasRenderingContext2D}}
      */
     onMouseDown({rawEvent, ctx} = {}) {
+        this.deletedStrokes = this.targetCanvasAPI.strokesRef.current.length
         this.isMouseDown = true
         this.onMouseMove({rawEvent: rawEvent, ctx: ctx})
     }
@@ -105,6 +116,10 @@ export class EraserTool extends Tool {
         this.isMouseDown = false
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
         //save history here (feature maybe ?)
+        this.deletedStrokes -= this.targetCanvasAPI.strokesRef.current.length
+        if(this.deletedStrokes > 0) {
+            this.history.commit()
+        }
     }
 
     /**
@@ -114,4 +129,9 @@ export class EraserTool extends Tool {
     onFinalWork({rawEvent, ctx} = {}) {
         this.targetCanvasAPI.drawCanvas()
     }
+
+    /**
+     * clear all event listeners or reference that can cause bugs
+     */
+    cleanUp() {}
 }

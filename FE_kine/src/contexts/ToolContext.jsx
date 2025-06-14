@@ -17,7 +17,7 @@ export class ToolContextValue {
 const ToolContext = createContext(null)
 
 /**
- * Tool Provider, default is pen
+ * Tool Provider, default tool is pen
  * @param {{children: ReactNode}}
  * @returns {JSX.Element}
  */
