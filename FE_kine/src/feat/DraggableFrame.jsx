@@ -2,9 +2,11 @@ import React, { useRef, useState, ReactNode } from "react";
 import Draggable, {DraggableCore} from 'react-draggable';
 import { Vector } from "../utils/Vector";
 import { MathJax } from "better-react-mathjax";
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 /**
  * draggable frame with shadow when drag
- * @param {{x: Number, y:Number, width: Number, height:Number, children: ReactNode}} 
+ * @param {{x: Number, y:Number, width: Number, height:Number, children: String}} 
  * @returns {JSX.Element}
  */
 export function DraggableFrame({x, y, width, height, children}) {
@@ -75,7 +77,9 @@ export function DraggableFrame({x, y, width, height, children}) {
     return !isRemove.current && (
         <div style={{
             zIndex: 1003,
-            position: 'absolute'
+            position: 'absolute',
+            width: '0',
+            height: '0'
         }}>
             {/*show only if shadowPosition not null*/}
             {shadowPositionRef.current && (
@@ -148,7 +152,10 @@ export function DraggableFrame({x, y, width, height, children}) {
                             width: '100%',
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word',
-                        }}>{children}</div>
+                            overflowY: 'auto'
+                        }}>
+                            <ReactMarkdown children={children} remarkPlugins={[remarkGfm]} />
+                        </div>
                     </MathJax>
                 </div>
             </Draggable>
